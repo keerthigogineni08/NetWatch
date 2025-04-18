@@ -84,53 +84,17 @@ def render_shap_explainer(model, data_sample):
     except Exception as e:
         st.error(f"Could not display SHAP plot: {e}")
 
-def download_model_from_gdrive_large(file_id):
-    def get_confirm_token(response_text):
-        match = re.search(r"confirm=([0-9A-Za-z_]+)", response_text)
-        return match.group(1) if match else None
-
-    try:
-        URL = "https://drive.google.com/uc?export=download"
-        session = requests.Session()
-
-        # Step 1: Initial request to get confirm token
-        response = session.get(URL, params={'id': file_id}, stream=True)
-        token = get_confirm_token(response.text)
-
-        if token:
-            params = {'id': file_id, 'confirm': token}
-            response = session.get(URL, params=params, stream=True)
-
-        # Step 2: Write to temp file
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pkl") as tmp:
-            for chunk in response.iter_content(32768):
-                if chunk:
-                    tmp.write(chunk)
-            tmp.flush()
-            return joblib.load(tmp.name)
-
-    except Exception as e:
-        st.error(f"❌ Failed to download/load large model from Google Drive.\nError: {e}")
-        raise e
+import gdown
 
 @st.cache_resource
-def download_experience_model():
-    # Your shared Google Drive file ID
-    file_id = "1v8rzLByAJpChO2fN1HxFOOBDS16NcH6y"
-    gdrive_url = f"https://drive.google.com/uc?export=download&id={file_id}"
-    response = requests.get(gdrive_url)
-    if response.status_code != 200:
-        raise Exception("Failed to download model from Google Drive.")
-    with tempfile.NamedTemporaryFile(delete=False) as tmp:
-        tmp.write(response.content)
-        return joblib.load(tmp.name)
+def load_experience_model_from_drive():
+    url = "https://drive.google.com/uc?id=1v8rzLByAJpChO2fN1HxFOOBDS16NcH6y"
+    output = "models/experience_score_model.pkl"
+    if not os.path.exists(output):
+        gdown.download(url, output, quiet=False)
+    return joblib.load(output)
 
-# This just loads the model from Drive
-EXPERIENCE_MODEL_FILE_ID = "1v8rzLByAJpChO2fN1HxFOOBDS16NcH6y"
-try:
-    experience_model = download_model_from_gdrive_large(EXPERIENCE_MODEL_FILE_ID)
-except Exception:
-    st.stop()  # Prevent rest of the app from running if model load fails
+experience_model = load_experience_model_from_drive()
 
 
 # ==========================

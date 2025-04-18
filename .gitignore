@@ -2,6 +2,8 @@ __pycache__/
 .ipynb_checkpoints/
 .DS_Store
 
+# Large model to ignore
+models/experience_score_model.pkl
 
 # Other large files to ignore
 *.binetflow.txt
