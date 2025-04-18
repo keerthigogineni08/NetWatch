@@ -358,18 +358,23 @@ elif tabs == "Behavior Clusters":
         cluster_df,
         x="PCA1", y="PCA2",
         color="device",
-        size="mean",
+        size="mean",  # optional — can keep or remove if you want uniform size
         hover_data=["mean", "std", "cluster"],
         title="📊 IoT Device Behavior: PCA Projection",
         width=1000, height=600
     )
-    fig.update_traces(marker=dict(opacity=0.8, line=dict(width=1, color='DarkSlateGrey')))
-    st.plotly_chart(fig, use_container_width=True)
     
-    # 🔧 Set marker size manually (uniform size, not tied to data)
-    fig.update_traces(marker=dict(size=12))  # or size=15 for big juicy dots
+    # Update marker style
+    fig.update_traces(marker=dict(
+        size=12,                # 👈 uniform size
+        opacity=0.8,
+        line=dict(width=1, color='DarkSlateGrey')
+    ))
+
+    # Show only once
     st.plotly_chart(fig, use_container_width=True)
     st.caption("Devices with similar traffic patterns are grouped together.")
+
 
 elif tabs == "Incident Log":
     import datetime
