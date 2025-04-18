@@ -84,15 +84,12 @@ def render_shap_explainer(model, data_sample):
         st.error(f"Could not display SHAP plot: {e}")
 
 def download_model_from_gdrive(file_id, destination_path="models/experience_score_model.pkl"):
-    """Download a file from Google Drive using file_id."""
     url = f"https://drive.google.com/uc?export=download&id={file_id}"
     response = requests.get(url)
     response.raise_for_status()
-
     with open(destination_path, "wb") as f:
         f.write(response.content)
-    
-    return destination_path
+    return joblib.load(destination_path)  # <-- load & return the actual model
 
 @st.cache_resource
 def download_experience_model():
@@ -106,7 +103,7 @@ def download_experience_model():
         tmp.write(response.content)
         return joblib.load(tmp.name)
 
-# Use your actual file ID here
+# This just loads the model from Drive
 EXPERIENCE_MODEL_FILE_ID = "1v8rzLByAJpChO2fN1HxFOOBDS16NcH6y"
 experience_model = download_model_from_gdrive(EXPERIENCE_MODEL_FILE_ID)
 
@@ -297,8 +294,12 @@ elif tabs == "Outage Detector":
     test_data = pd.DataFrame([[rssi, latency, jitter, packet_loss]],
         columns=["rssi", "latency_ms", "jitter_ms", "packet_loss"])
 
+
     model_bundle = load_model("models/outage_detector_model.pkl")
     clf_model = model_bundle["model"]
+    threshold = model_bundle["threshold"]
+
+
     threshold = st.slider("🎯 Outage Sensitivity Threshold", 0.0, 1.0, model_bundle["threshold"], step=0.05)
 
     st.caption("🧠 This prediction is based on your chosen threshold. Lower it to catch more risks, raise it for stricter detection.")
