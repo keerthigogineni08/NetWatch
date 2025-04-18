@@ -70,6 +70,37 @@ df['rssi'].fillna(df['rssi'].median(), inplace=True)
 df['latency_ms'].fillna(df['latency_ms'].median(), inplace=True)
 df['jitter_ms'].fillna(df['jitter_ms'].median(), inplace=True)
 df['jitter_ms'] = df['jitter_ms'].clip(upper=300)
+
+print("\n🛠️ Labeling predicted outages based on real + synthetic logic...")
+
+# Drop rows with missing signal values
+df.dropna(subset=['rssi', 'latency_ms', 'jitter_ms', 'packet_loss'], inplace=True)
+
+# 💥 Clear any existing labels (to prevent stale 0-only labels)
+if 'predicted_outage' in df.columns:
+    df.drop(columns=['predicted_outage'], inplace=True)
+
+# Step 1: Apply realistic outage logic
+df['predicted_outage'] = (
+    (df['rssi'] < -82) &
+    (df['latency_ms'] > 220) &
+    (df['packet_loss'] > 0.02)
+).astype(int)
+
+# Step 2: Force synthetic outages if < 5%
+num_outages = df['predicted_outage'].sum()
+min_required = int(0.05 * len(df))  # 5% of total
+
+if num_outages < min_required:
+    num_to_add = min_required - num_outages
+    print(f"⚠️ Only {num_outages} real outages found — injecting {num_to_add} synthetic ones...")
+    synthetic = df[df['predicted_outage'] == 0].sample(n=num_to_add, random_state=42).index
+    df.loc[synthetic, 'predicted_outage'] = 1
+
+# Final check
+print("✅ Final outage distribution:")
+print(df['predicted_outage'].value_counts())
+
 df['timestamp'] = pd.to_datetime(df['timestamp'])
 df.sort_values(by=['home_id', 'device_id', 'timestamp'], inplace=True)
 df.to_csv("Generated_data/netwatch_wifi_cleaned.csv", index=False)
@@ -82,10 +113,13 @@ df.to_csv("Generated_data/netwatch_wifi_cleaned.csv", index=False)
 
 print("\n📊 ML Training for Regression + Classification")
 df = pd.read_csv("Generated_data/netwatch_wifi_cleaned.csv")
+print("🧪 Checking reloaded class distribution:")
+print(df['predicted_outage'].value_counts())
+
 df_model = df.dropna(subset=['rssi', 'latency_ms', 'jitter_ms', 'packet_loss', 'experience_score', 'predicted_outage'])
 features = ['rssi', 'latency_ms', 'jitter_ms', 'packet_loss']
 
-# Regression
+# Regression – Experience Score
 X = df_model[features]
 y_reg = df_model['experience_score']
 X_train, X_test, y_train, y_test = train_test_split(X, y_reg, test_size=0.2, random_state=42)
@@ -96,16 +130,34 @@ rmse = mean_squared_error(y_test, y_pred, squared=False)
 print("\n📈 RMSE (experience_score):", rmse)
 joblib.dump(regressor, "models/experience_score_model.pkl")
 
-# Classification
+# Classification – Outage Prediction
 y_clf = df_model['predicted_outage']
-X_train_c, X_test_c, y_train_c, y_test_c = train_test_split(X, y_clf, test_size=0.2, random_state=42)
-classifier = RandomForestClassifier(n_estimators=100, random_state=42)
+X_train_c, X_test_c, y_train_c, y_test_c = train_test_split(X, y_clf, test_size=0.2, random_state=42, stratify=y_clf)
+
+
+# Show class balance
+print("Class distribution in training set:")
+print(y_train_c.value_counts())
+
+# Train classifier with class_weight to handle imbalance
+classifier = RandomForestClassifier(n_estimators=100, random_state=42, class_weight='balanced')
 classifier.fit(X_train_c, y_train_c)
-y_pred_c = classifier.predict(X_test_c)
+
+# Predict probabilities instead of just 0/1
+y_probs = classifier.predict_proba(X_test_c)[:, 1]
+
+# Custom threshold – make it more sensitive
+threshold = 0.3
+y_pred_c = (y_probs > threshold).astype(int)
+
+# Evaluate
 acc = accuracy_score(y_test_c, y_pred_c)
 print("\n🚨 Accuracy (outage prediction):", acc)
 print(classification_report(y_test_c, y_pred_c))
-joblib.dump(classifier, "models/outage_detector_model.pkl")
+
+# Save model and threshold together
+model_bundle = {"model": classifier, "threshold": threshold}
+joblib.dump(model_bundle, "models/outage_detector_model.pkl")
 
 
 

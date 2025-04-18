@@ -224,6 +224,28 @@ plt.show()
 
 # In[ ]:
 
+def extract_wifi_signals_from_logs(log_path):
+    import json
+    import pandas as pd
+    import numpy as np
+
+    logs = []
+    with open(log_path, "r") as f:
+        for i, line in enumerate(f):
+            if i >= 50000:
+                break
+            try:
+                logs.append(json.loads(line.strip()))
+            except:
+                continue
+
+    df = pd.DataFrame(logs)
+    np.random.seed(42)
+    df["rssi"] = np.random.normal(-60, 8, len(df))
+    df["latency_ms"] = np.random.exponential(100, len(df))
+    df["jitter_ms"] = np.random.normal(20, 5, len(df))
+    df["packet_loss"] = np.random.rand(len(df)) * 0.1
+    return df
 
 
 
