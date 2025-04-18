@@ -674,6 +674,8 @@ elif tabs == "WiFi Simulation":
         motion = st.checkbox("🎞️ Animate Device Movement", value=True)
         falloff_enabled = st.checkbox("📡 Distance-Based Signal Falloff", value=True)
         refresh = st.button("🔄 Regenerate Devices")
+        refresh_rate = st.slider("⏱️ Animation Speed (sec)", 0.5, 5.0, 1.5, step=0.1)
+
 
     # ========== Generate or Animate ==========
     if "sim_df" not in st.session_state or refresh:
@@ -718,8 +720,8 @@ elif tabs == "WiFi Simulation":
 
     # ========== Trigger Auto-Refresh ==========
     if motion:
-        time.sleep(1)  # Add a small delay to avoid flooding the app
-        st.rerun()     # ✅ Official rerun method (more stable than experimental_rerun)
+        time.sleep(refresh_rate)
+        st.experimental_rerun()
 
 
 elif tabs == "Real vs Simulated":
