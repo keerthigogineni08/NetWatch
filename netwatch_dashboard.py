@@ -8,6 +8,9 @@ import os
 import shap
 import matplotlib.pyplot as plt
 import json
+import joblib
+import tempfile
+import requests
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
@@ -79,6 +82,22 @@ def render_shap_explainer(model, data_sample):
         st.write(data_sample.head())
     except Exception as e:
         st.error(f"Could not display SHAP plot: {e}")
+
+@st.cache_resource
+def download_experience_model():
+    # Your shared Google Drive file ID
+    file_id = "1v8rzLByAJpChO2fN1HxFOOBDS16NcH6y"
+    gdrive_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+    response = requests.get(gdrive_url)
+    if response.status_code != 200:
+        raise Exception("Failed to download model from Google Drive.")
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        tmp.write(response.content)
+        return joblib.load(tmp.name)
+
+# Use your actual file ID here
+EXPERIENCE_MODEL_FILE_ID = "1v8rzLByAJpChO2fN1HxFOOBDS16NcH6y"
+experience_model = download_model_from_gdrive(EXPERIENCE_MODEL_FILE_ID)
 
 # ==========================
 # TABS
@@ -168,7 +187,9 @@ elif tabs == "Experience Predictor":
         jitter = st.slider("📊 Jitter (ms)", 0, 300, 146)
         packet_loss = st.slider("🥔 Packet Loss", 0.00, 1.00, 0.13)
 
-    model = load_model("models/experience_score_model.pkl")
+    #model = load_model("models/experience_score_model.pkl")
+    model = experience_model
+
     features = pd.DataFrame([[rssi, latency, jitter, packet_loss]],
                             columns=["rssi", "latency_ms", "jitter_ms", "packet_loss"])
     score = model.predict(features)[0]
@@ -223,7 +244,9 @@ elif tabs == "Connection Tester":
         packet_loss = 0.01
 
         # Run through your experience model
-        model = load_model("models/experience_score_model.pkl")
+        #model = load_model("models/experience_score_model.pkl")
+        model = experience_model
+
         input_df = pd.DataFrame([[rssi, latency_ms, jitter, packet_loss]],
                                 columns=["rssi", "latency_ms", "jitter_ms", "packet_loss"])
         score = model.predict(input_df)[0]

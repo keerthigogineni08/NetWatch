@@ -1,7 +1,11 @@
 __pycache__/
 .ipynb_checkpoints/
 .DS_Store
-models/
+# Ignore all files in models/
+#models/*
+# But don't ignore the outage model
+#!models/outage_detector_model.pkl
+models/experience_score_model.pkl
 *.pkl
 *.binetflow.txt
 wls_day-01
