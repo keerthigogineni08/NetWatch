@@ -49,7 +49,7 @@ df = df.dropna(subset=features + ['experience_score'])
 X = df[features]
 y = df['experience_score']
 
-regressor = RandomForestRegressor(n_estimators=100, random_state=42)
-regressor.fit(X, y)
+model = RandomForestRegressor(n_estimators=100, random_state=42)
+model.fit(X, y)
 
-joblib.dump(regressor, "models/experience_score_model.pkl")
+joblib.dump(model, "models/experience_score_model.pkl")
