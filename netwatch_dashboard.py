@@ -645,19 +645,62 @@ elif tabs == "Technical Analysis":
 
 elif tabs == "WiFi Simulation":
     st.header("🛰️ WiFi Coverage Playground")
-    st.markdown("Imagine a house floorplan where your devices are randomly scattered...")
+    st.markdown("Imagine a smart home floorplan where your devices move and signal strength fluctuates over time...")
 
-    sim_df = pd.DataFrame({
-        "x": np.random.randint(0, 100, 20),
-        "y": np.random.randint(0, 100, 20),
-        "rssi": np.random.uniform(-60, -30, 20),
-        "device": [f"Device {i+1}" for i in range(20)]
-    })
-    fig = px.scatter(sim_df, x="x", y="y", color="rssi", text="device",
-                     color_continuous_scale="RdYlGn_r", title="🎯 WiFi Device Heatmap", width=800, height=600)
-    fig.update_traces(textposition="top center")
+    # ========== Sidebar Controls ==========
+    with st.sidebar.expander("🎛️ Simulation Settings", expanded=True):
+        num_devices = st.slider("Number of Devices", 5, 30, 20)
+        base_rssi = st.slider("📶 Base RSSI (dBm)", -90, -30, -60)
+        signal_noise = st.slider("📉 Signal Noise Level", 0, 20, 5)
+        motion = st.checkbox("🎞️ Animate Device Movement", value=True)
+        falloff_enabled = st.checkbox("📡 Distance-Based Signal Falloff", value=True)
+        refresh = st.button("🔄 Regenerate Devices")
+
+    # ========== Generate or Animate ==========
+    if "sim_df" not in st.session_state or refresh:
+        st.session_state["sim_df"] = pd.DataFrame({
+            "x": np.random.randint(0, 100, num_devices),
+            "y": np.random.randint(0, 100, num_devices),
+            "device": [f"Device {i+1}" for i in range(num_devices)]
+        })
+
+    df = st.session_state["sim_df"]
+
+    # ========== Animate if toggled ==========
+    if motion:
+        df["x"] += np.random.randint(-2, 3, size=len(df))
+        df["y"] += np.random.randint(-2, 3, size=len(df))
+        df["x"] = df["x"].clip(0, 100)
+        df["y"] = df["y"].clip(0, 100)
+
+    # ========== Simulate RSSI ==========
+    if falloff_enabled:
+        center_x, center_y = 50, 50
+        distances = np.sqrt((df["x"] - center_x)**2 + (df["y"] - center_y)**2)
+        df["rssi"] = base_rssi - distances + np.random.normal(0, signal_noise, len(df))
+    else:
+        df["rssi"] = base_rssi + np.random.normal(0, signal_noise, len(df))
+
+    # ========== Plot ==========
+    fig = px.scatter(df, x="x", y="y", color="rssi", text="device",
+                     color_continuous_scale="RdYlGn_r", title="🎯 WiFi Device Heatmap",
+                     range_color=[-90, -30], width=900, height=600)
+
+    fig.update_traces(
+        textposition="top center",
+        marker=dict(size=14, line=dict(width=1, color="black"))
+    )
+
     st.plotly_chart(fig, use_container_width=True)
-    st.caption("Each dot is a device. Color = signal strength. Click and drag to explore!")
+
+    # ========== Live Sim Caption ==========
+    st.caption("Each dot is a device. Color = signal strength (RSSI). Device positions, noise, and signal loss are simulated in real time.")
+    st.caption("📍 Devices closer to the center have stronger signals if distance falloff is enabled.")
+
+    # ========== Trigger Auto-Refresh ==========
+    if motion:
+        st.experimental_rerun()  # reruns app loop when in motion mode
+
 
 elif tabs == "Real vs Simulated":
     st.header("📊 Real vs Simulated Data")
