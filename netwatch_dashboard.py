@@ -202,15 +202,25 @@ elif tabs == "Experience Predictor":
                             columns=["rssi", "latency_ms", "jitter_ms", "packet_loss"])
     score = model.predict(features)[0]
 
-    if score >= 0.85:
-        emoji, note = "🌟", "Flawless! You could livestream a space launch 🚀"
-        color = "green"
-    elif score >= 0.6:
-        emoji, note = "😐", "Decent but not perfect. Some buffering might sneak in."
-        color = "orange"
-    else:
-        emoji, note = "🚨", "Yikes. Expect slowdowns, maybe even full drops 😬"
-        color = "red"
+    try:
+        score = model.predict(features)[0]
+
+        if score >= 0.85:
+            emoji, note = "🌟", "Flawless! You could livestream a space launch 🚀"
+            color = "green"
+        elif score >= 0.6:
+            emoji, note = "😐", "Decent but not perfect. Some buffering might sneak in."
+            color = "orange"
+        else:
+            emoji, note = "🚨", "Yikes. Expect slowdowns, maybe even full drops 😬"
+            color = "red"
+
+        st.markdown(f"<h3 style='color:{color}; font-weight:bold;'>{emoji} Experience Score: {score:.3f}</h3>", unsafe_allow_html=True)
+        st.markdown(f"<span style='color:{color}'>{note}</span>", unsafe_allow_html=True)
+
+    except Exception as e:
+        st.error(f"⚠️ Could not calculate score: {e}")
+
 
     st.markdown(f"<h3 style='color:{color}; font-weight:bold;'>{emoji} Experience Score: {score:.3f}</h3>", unsafe_allow_html=True)
     st.markdown(f"<span style='color:{color}'>{note}</span>", unsafe_allow_html=True)
@@ -305,7 +315,7 @@ elif tabs == "Outage Detector":
     st.caption("🧠 This prediction is based on your chosen threshold. Lower it to catch more risks, raise it for stricter detection.")
 
 
-    prob = clf_model.predict_proba(test_data)[0][1]
+    prob = clf_model.predict_proba(test_data.fillna(0))[0][1]
     st.metric("📉 Outage Probability", f"{prob:.2%}")
 
     prediction = int(prob > threshold)
@@ -585,7 +595,7 @@ elif tabs == "Technical Analysis":
         ctu_df["Proto"] = ctu_df["Proto"].astype('category').cat.codes
         ctu_df.dropna(subset=["SrcBytes", "DstBytes", "Proto"], inplace=True)
 
-        X_ctu = ctu_df[["TotBytes", "TotPkts", "Dur", "SrcBytes", "DstBytes", "Proto"]]
+        X_ctu = ctu_df[["TotBytes", "TotPkts", "Dur", "SrcBytes", "DstBytes", "Proto"]].fillna(0)
         y_ctu = ctu_df["is_malicious"]
         y_pred = clf_ctu.predict(X_ctu)
 
@@ -614,16 +624,7 @@ elif tabs == "Technical Analysis":
         Logging events from Windows — great for spotting frequent or suspicious activity.
         """)
         try:
-            import json
-            logs = []
-            with open("Real_data/wls_day-01", "r") as f:
-                for i, line in enumerate(f):
-                    if i >= 20000: break
-                    try:
-                        logs.append(json.loads(line.strip()))
-                    except json.JSONDecodeError:
-                        continue
-            df_wls = pd.DataFrame(logs)
+            df_wls = pd.read_csv("Real_data/wls_day-01_sampled.csv")
             base_time = pd.Timestamp("2024-01-01 00:00:00")
             df_wls['timestamp'] = [base_time + pd.Timedelta(seconds=i*5) for i in range(len(df_wls))]
             df_wls.set_index('timestamp', inplace=True)
@@ -701,16 +702,7 @@ elif tabs == "Real vs Simulated":
             caption_note = "IoT traffic is lightweight but varies by device – expect clustered behaviors."
 
         elif dataset_choice == "Los Alamos Logs":
-            lines = []
-            with open("Real_data/wls_day-01", "r") as f:
-                for i, line in enumerate(f):
-                    if i >= 50000:
-                        break
-                    try:
-                        lines.append(json.loads(line.strip()))
-                    except:
-                        continue
-            df = pd.DataFrame(lines)
+            df = pd.read_csv("Real_data/wls_day-01_sampled.csv")
             df = df.dropna(subset=["ProcessName", "LogHost"])
             np.random.seed(42)
             real_df = pd.DataFrame({
@@ -834,20 +826,10 @@ elif tabs == "Dataset Stories":
     with story_tab[2]:
         st.subheader("🏢 Los Alamos Logs")
         st.markdown("These are anonymized **enterprise logs** from system events. Patterns show long stable periods and rare bursts — good for modeling **baseline vs anomaly** in secure environments.")
-        logs = []
-        with open("Real_data/wls_day-01", "r") as f:
-            for i, line in enumerate(f):
-                if i >= 10000:
-                    break
-                try:
-                    logs.append(json.loads(line.strip()))
-                except:
-                    continue
-        df_logs = pd.DataFrame(logs)
+        df_logs = pd.read_csv("Real_data/wls_day-01_sampled.csv")
         df_logs = df_logs[df_logs["ProcessName"].notna()]
         counts = df_logs["ProcessName"].value_counts().reset_index()
         counts.columns = ["Process", "Count"]
-        #fig = px.bar(counts.head(15), x="Process", y="Count", title="📈 Top 15 Logged Processes")
         fig = px.bar(
             counts.head(15), x="Process", y="Count",
             color="Count", color_continuous_scale="Plasma",

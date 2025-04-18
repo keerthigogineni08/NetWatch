@@ -87,18 +87,9 @@ df_iot.to_csv("output/iot_clustered.csv", index=False)
 print("✅ IoT clustering completed.")
 
 # === 4. WLS Data ===
-print("\n📡 Streaming WLS data (first 50,000 lines)...")
-wls_path = os.path.join(iot_base_path, "wls_day-01")
-logs = []
-with open(wls_path, "r") as f:
-    for i, line in enumerate(f):
-        if i >= 50000:
-            break
-        try:
-            logs.append(json.loads(line.strip()))
-        except:
-            continue
-df_wls = pd.DataFrame(logs)
+print("\\n📡 Streaming WLS data (sampled CSV)...")
+wls_path = os.path.join(iot_base_path, "wls_day-01_sampled.csv")
+df_wls = pd.read_csv(wls_path)
 print("✅ Loaded WLS sample of shape:", df_wls.shape)
 
 # WLS Summary
