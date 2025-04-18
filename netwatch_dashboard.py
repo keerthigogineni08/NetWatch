@@ -228,56 +228,61 @@ elif tabs == "Experience Predictor":
 
 elif tabs == "Connection Tester":
     with st.container():
-        st.header("🧪 Test My Connection")
-        st.markdown("Let's quickly measure your network latency and predict your WiFi experience in real time.")
-        st.info("⏱️ This will ping a reliable server from your browser and estimate how fast your internet responds.")
+        st.header("📶 WiFi Experience Check")
+        st.markdown("Run a quick test to estimate your WiFi quality based on latency, signal strength, jitter, and packet loss.")
+        st.info("This tool simulates how smooth your connection feels — great for live demos, self-diagnostics, or just nerdy curiosity 👨‍💻")
 
-        latency_script = """
-        const start = performance.now();
-        fetch("https://api.github.com", { mode: "cors" })
-          .then(() => {
-            const latency = performance.now() - start;
-            Streamlit.setComponentValue(latency);
-          })
-          .catch(() => {
-            Streamlit.setComponentValue(-1);
-          });
-        """
+        run_test = st.button("🚀 Run WiFi Test")
 
-        from streamlit_javascript import st_javascript
-        latency_ms = st_javascript(latency_script, key="latency_test_final")
+        latency_ms = None
+        if run_test:
+            from streamlit_javascript import st_javascript
+            latency_script = """
+            const start = performance.now();
+            fetch("https://api.github.com", { mode: "cors" })
+              .then(() => {
+                const latency = performance.now() - start;
+                Streamlit.setComponentValue(latency);
+              })
+              .catch(() => {
+                Streamlit.setComponentValue(-1);
+              });
+            """
+            latency_ms = st_javascript(latency_script, key="latency_test_final")
 
-        st.caption("🔍 Measuring latency using GitHub API (fast, safe, and public)")
-
-        # ⏱️ Show latency or let user enter it manually
-        if latency_ms and latency_ms > 0:
-            st.success(f"📶 Estimated Latency: `{round(latency_ms)} ms`")
-        elif latency_ms == -1:
-            st.error("❌ Network request to GitHub failed. You might be on a restricted network.")
-        else:
-            st.warning("⚠️ Could not measure latency. Using manual fallback instead.")
-            latency_ms = st.slider("🎛️ Manually enter estimated latency (ms)", 1, 500, 120)
-
-        # 🚀 Simulated signal values (for prediction)
+        # Signal values (can later let user adjust these too)
         rssi = -55
         jitter = 15
         packet_loss = 0.01
         model = experience_model
 
+        # Handle no JS or failed ping
+        if not latency_ms or latency_ms <= 0:
+            st.warning("⚠️ Could not measure latency automatically. Let’s estimate it manually instead.")
+            latency_ms = st.slider("🎛️ Estimate your latency (ms)", 20, 400, 120)
+
+        st.markdown("### 📋 Signal Snapshot for Prediction")
+        st.markdown(f"""
+        - **Latency:** `{round(latency_ms)} ms`  
+        - **RSSI:** `{rssi} dBm`  
+        - **Jitter:** `{jitter} ms`  
+        - **Packet Loss:** `{packet_loss * 100:.1f}%`
+        """)
+
         input_df = pd.DataFrame([[rssi, latency_ms, jitter, packet_loss]],
                                 columns=["rssi", "latency_ms", "jitter_ms", "packet_loss"])
         score = model.predict(input_df)[0]
 
-        # 🎯 Show prediction result
         if score >= 0.85:
             emoji, note, color = "🌟", "Flawless connection. You could livestream a rocket launch 🚀", "green"
         elif score >= 0.6:
-            emoji, note, color = "😐", "Decent connection — good for browsing or calls", "orange"
+            emoji, note, color = "😐", "Decent connection — good for browsing or video calls", "orange"
         else:
-            emoji, note, color = "🚨", "Yikes. Expect buffering, drops, or lag", "red"
+            emoji, note, color = "🚨", "Slow or unstable. Expect buffering or lag", "red"
 
         st.markdown(f"<h3 style='color:{color}'>{emoji} Experience Score: {score:.2f}</h3>", unsafe_allow_html=True)
         st.markdown(f"<span style='color:{color}'>{note}</span>", unsafe_allow_html=True)
+
 
 
 elif tabs == "Outage Detector":
