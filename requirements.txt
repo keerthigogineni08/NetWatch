@@ -1,4 +1,5 @@
 streamlit
+streamlit-javascript
 shap
 pandas
 numpy
@@ -8,4 +9,3 @@ scikit-learn
 plotly
 joblib
 openpyxl
-
