@@ -31,7 +31,6 @@ tabs = st.sidebar.radio("Go to:", [
     "Welcome", 
     "Experience Predictor", 
     "Outage Detector", 
-    "Connection Tester", 
     "Time Series Explorer",
     "Behavior Clusters", 
     "Incident Log", 
