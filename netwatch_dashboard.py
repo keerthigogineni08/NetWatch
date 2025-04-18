@@ -83,13 +83,21 @@ def render_shap_explainer(model, data_sample):
     except Exception as e:
         st.error(f"Could not display SHAP plot: {e}")
 
-def download_model_from_gdrive(file_id, destination_path="models/experience_score_model.pkl"):
-    url = f"https://drive.google.com/uc?export=download&id={file_id}"
-    response = requests.get(url)
-    response.raise_for_status()
-    with open(destination_path, "wb") as f:
-        f.write(response.content)
-    return joblib.load(destination_path)  # <-- load & return the actual model
+def download_model_from_gdrive(file_id):
+    try:
+        url = f"https://drive.google.com/uc?export=download&id={file_id}"
+        response = requests.get(url)
+        response.raise_for_status()
+        
+        # Use a temp file to avoid permission or corruption issues
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pkl") as tmp:
+            tmp.write(response.content)
+            tmp.flush()
+            return joblib.load(tmp.name)
+
+    except Exception as e:
+        st.error(f"❌ Failed to download/load model from Google Drive.\nError: {e}")
+        raise e
 
 @st.cache_resource
 def download_experience_model():
@@ -105,7 +113,11 @@ def download_experience_model():
 
 # This just loads the model from Drive
 EXPERIENCE_MODEL_FILE_ID = "1v8rzLByAJpChO2fN1HxFOOBDS16NcH6y"
-experience_model = download_model_from_gdrive(EXPERIENCE_MODEL_FILE_ID)
+try:
+    experience_model = download_model_from_gdrive(EXPERIENCE_MODEL_FILE_ID)
+except Exception:
+    st.stop()  # Prevent rest of the app from running if model load fails
+
 
 # ==========================
 # TABS
