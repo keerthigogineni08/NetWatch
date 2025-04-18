@@ -212,9 +212,6 @@ elif tabs == "Experience Predictor":
         st.error(f"⚠️ Could not calculate score: {e}")
 
 
-    st.markdown(f"<h3 style='color:{color}; font-weight:bold;'>{emoji} Experience Score: {score:.3f}</h3>", unsafe_allow_html=True)
-    st.markdown(f"<span style='color:{color}'>{note}</span>", unsafe_allow_html=True)
-
     with st.expander("ℹ️ What Do These Features Mean?"):
         st.markdown("""
         - **RSSI** → Signal strength. Lower (like -90) = weaker signal.
