@@ -234,44 +234,50 @@ elif tabs == "Connection Tester":
 
         latency_script = """
         const start = performance.now();
-        fetch("https://api.github.com", { mode: "cors" }).then(() => {
-            const end = performance.now();
-            Streamlit.setComponentValue(end - start);
-        });
+        fetch("https://api.github.com", { mode: "cors" })
+          .then(() => {
+            const latency = performance.now() - start;
+            Streamlit.setComponentValue(latency);
+          })
+          .catch(() => {
+            Streamlit.setComponentValue(-1);
+          });
         """
+
         from streamlit_javascript import st_javascript
         latency_ms = st_javascript(latency_script, key="latency_test_final")
 
         st.caption("🔍 Measuring latency using GitHub API (fast, safe, and public)")
 
+        # ⏱️ Show latency or let user enter it manually
         if latency_ms and latency_ms > 0:
             st.success(f"📶 Estimated Latency: `{round(latency_ms)} ms`")
-
-            # Example signal values (you can later customize or make them dynamic)
-            rssi = -55
-            jitter = 15
-            packet_loss = 0.01
-
-            # Run through your experience model
-            #model = load_model("models/experience_score_model.pkl")
-            model = experience_model
-
-            input_df = pd.DataFrame([[rssi, latency_ms, jitter, packet_loss]],
-                                    columns=["rssi", "latency_ms", "jitter_ms", "packet_loss"])
-            score = model.predict(input_df)[0]
-
-            # Display result
-            if score >= 0.85:
-                emoji, note, color = "🌟", "Flawless connection. You could livestream a rocket launch 🚀", "green"
-            elif score >= 0.6:
-                emoji, note, color = "😐", "Decent connection — good for browsing or calls", "orange"
-            else:
-                emoji, note, color = "🚨", "Yikes. Expect buffering, drops, or lag", "red"
-
-            st.markdown(f"<h3 style='color:{color}'>{emoji} Experience Score: {score:.2f}</h3>", unsafe_allow_html=True)
-            st.markdown(f"<span style='color:{color}'>{note}</span>", unsafe_allow_html=True)
+        elif latency_ms == -1:
+            st.error("❌ Network request to GitHub failed. You might be on a restricted network.")
         else:
-            st.warning("⚠️ Could not measure latency. This may not work on localhost. Try it on your deployed dashboard.")
+            st.warning("⚠️ Could not measure latency. Using manual fallback instead.")
+            latency_ms = st.slider("🎛️ Manually enter estimated latency (ms)", 1, 500, 120)
+
+        # 🚀 Simulated signal values (for prediction)
+        rssi = -55
+        jitter = 15
+        packet_loss = 0.01
+        model = experience_model
+
+        input_df = pd.DataFrame([[rssi, latency_ms, jitter, packet_loss]],
+                                columns=["rssi", "latency_ms", "jitter_ms", "packet_loss"])
+        score = model.predict(input_df)[0]
+
+        # 🎯 Show prediction result
+        if score >= 0.85:
+            emoji, note, color = "🌟", "Flawless connection. You could livestream a rocket launch 🚀", "green"
+        elif score >= 0.6:
+            emoji, note, color = "😐", "Decent connection — good for browsing or calls", "orange"
+        else:
+            emoji, note, color = "🚨", "Yikes. Expect buffering, drops, or lag", "red"
+
+        st.markdown(f"<h3 style='color:{color}'>{emoji} Experience Score: {score:.2f}</h3>", unsafe_allow_html=True)
+        st.markdown(f"<span style='color:{color}'>{note}</span>", unsafe_allow_html=True)
 
 
 elif tabs == "Outage Detector":
