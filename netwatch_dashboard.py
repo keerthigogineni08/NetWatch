@@ -17,6 +17,10 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from streamlit_javascript import st_javascript
 
+import sklearn
+st.warning(f"📦 Streamlit Cloud is using scikit-learn version: {sklearn.__version__}")
+
+
 # ==========================
 # Page Config
 # ==========================
