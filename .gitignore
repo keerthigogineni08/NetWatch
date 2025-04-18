@@ -1,14 +1,15 @@
 __pycache__/
 .ipynb_checkpoints/
 .DS_Store
-# Ignore all files in models/
-#models/*
-# But don't ignore the outage model
-#!models/outage_detector_model.pkl
+
+# Large model to ignore
 models/experience_score_model.pkl
-*.pkl
+
+# Other large files to ignore
 *.binetflow.txt
 wls_day-01
 *.pcap
 *.csv
-*.pkl
+
+# ⛔ REMOVE or comment this line out — it blocks ALL .pkl files
+# *.pkl

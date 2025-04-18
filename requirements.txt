@@ -1,11 +1,10 @@
 streamlit
-streamlit-javascript
-shap
 pandas
 numpy
+joblib
+shap
+scikit-learn
 matplotlib
 seaborn
-scikit-learn
 plotly
-joblib
-openpyxl
+streamlit-javascript

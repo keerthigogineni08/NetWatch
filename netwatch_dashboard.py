@@ -83,6 +83,17 @@ def render_shap_explainer(model, data_sample):
     except Exception as e:
         st.error(f"Could not display SHAP plot: {e}")
 
+def download_model_from_gdrive(file_id, destination_path="models/experience_score_model.pkl"):
+    """Download a file from Google Drive using file_id."""
+    url = f"https://drive.google.com/uc?export=download&id={file_id}"
+    response = requests.get(url)
+    response.raise_for_status()
+
+    with open(destination_path, "wb") as f:
+        f.write(response.content)
+    
+    return destination_path
+
 @st.cache_resource
 def download_experience_model():
     # Your shared Google Drive file ID
