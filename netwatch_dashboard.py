@@ -721,7 +721,7 @@ elif tabs == "WiFi Simulation":
     # ========== Trigger Auto-Refresh ==========
     if motion:
         time.sleep(refresh_rate)
-        st.experimental_rerun()
+        st.rerun()
 
 
 elif tabs == "Real vs Simulated":
