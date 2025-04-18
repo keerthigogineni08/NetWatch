@@ -648,6 +648,24 @@ elif tabs == "WiFi Simulation":
     st.header("🛰️ WiFi Coverage Playground")
     st.markdown("Imagine a smart home floorplan where your devices move and signal strength fluctuates over time...")
 
+    st.markdown("""
+    This is a **dynamic WiFi simulation** of a smart home.  
+    Each **dot = a device** 🟢  
+    - Signal strength (RSSI) is shown by **color**  
+    - Devices move over time if animation is enabled  
+    - Closer to center = stronger signal (if distance falloff is ON)
+
+    👉 Use the **Simulation Settings panel** to customize:
+    - Number of devices
+    - Base RSSI strength
+    - Signal noise and fluctuation
+    - Animation toggle
+    - Distance falloff toggle
+
+    🔄 Click **Regenerate Devices** for a fresh new floorplan layout!
+    """)
+
+
     # ========== Sidebar Controls ==========
     with st.sidebar.expander("🎛️ Simulation Settings", expanded=True):
         num_devices = st.slider("Number of Devices", 5, 30, 20)
