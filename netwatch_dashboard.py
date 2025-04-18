@@ -88,7 +88,7 @@ import gdown
 
 @st.cache_resource
 def load_experience_model():
-    url = "https://drive.google.com/uc?id=1wS1e71iH0BSh0_FlfrQzCBMLfPtNKMDG"
+    url = "https://drive.google.com/uc?id=1dImwPszL81MljFzYQsvyL9fuW_L7rHs0"
     output = "models/experience_score_model.pkl"
     if not os.path.exists(output):
         gdown.download(url, output, quiet=False)

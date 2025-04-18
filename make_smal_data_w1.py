@@ -37,3 +37,19 @@ print(f"Parsed {len(sampled_logs)} valid log entries.")
 df = pd.DataFrame(sampled_logs)
 df.to_csv(output_file, index=False)
 print(f"✅ Saved sampled data to {output_file}")
+
+import pandas as pd
+from sklearn.ensemble import RandomForestRegressor
+import joblib
+
+df = pd.read_csv("Generated_data/netwatch_wifi_cleaned.csv")
+features = ['rssi', 'latency_ms', 'jitter_ms', 'packet_loss']
+df = df.dropna(subset=features + ['experience_score'])
+
+X = df[features]
+y = df['experience_score']
+
+regressor = RandomForestRegressor(n_estimators=100, random_state=42)
+regressor.fit(X, y)
+
+joblib.dump(regressor, "models/experience_score_model.pkl")
