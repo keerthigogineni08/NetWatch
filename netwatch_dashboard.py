@@ -12,6 +12,7 @@ import joblib
 import tempfile
 import requests
 import re
+import time
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
@@ -699,7 +700,8 @@ elif tabs == "WiFi Simulation":
 
     # ========== Trigger Auto-Refresh ==========
     if motion:
-        st.experimental_rerun()  # reruns app loop when in motion mode
+        time.sleep(1)  # Add a small delay to avoid flooding the app
+        st.rerun()     # ✅ Official rerun method (more stable than experimental_rerun)
 
 
 elif tabs == "Real vs Simulated":
