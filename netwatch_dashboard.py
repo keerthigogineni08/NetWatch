@@ -214,6 +214,43 @@ elif tabs == "Experience Predictor":
         except Exception as e:
             st.error(f"⚠️ Could not calculate score: {e}")
 
+        st.markdown("---")
+        st.subheader("🧪 Quick Self-Test Mode")
+        st.markdown("Run a quick test to estimate your WiFi quality based on latency, signal strength, jitter, and packet loss.")
+        st.info("This tool simulates how smooth your connection feels — great for live demos, self-diagnostics, or just nerdy curiosity 🧠")
+
+        run_test = st.button("🚀 Run WiFi Test")
+
+        if run_test:
+            st.warning("⚠️ Could not measure latency automatically. Let's estimate it manually instead.")
+
+        latency_fallback = st.slider("💻 Estimate your latency (ms)", 20, 400, 120)
+
+        st.markdown("### 📋 Signal Snapshot for Prediction")
+        st.markdown(f"""
+        - **Latency:** `{latency_fallback} ms`  
+        - **RSSI:** `-55 dBm`  
+        - **Jitter:** `15 ms`  
+        - **Packet Loss:** `1.0%`  
+        """)
+
+        test_input = pd.DataFrame([[-55, latency_fallback, 15, 0.01]], columns=["rssi", "latency_ms", "jitter_ms", "packet_loss"])
+
+        try:
+            test_score = model.predict(test_input)[0]
+            if test_score >= 0.85:
+                emoji2, note2, color2 = "🌟", "Flawless connection. You could livestream a rocket launch 🚀", "green"
+            elif test_score >= 0.6:
+                emoji2, note2, color2 = "😐", "Decent connection — good for browsing or video calls", "orange"
+            else:
+                emoji2, note2, color2 = "🚨", "Yikes. Expect buffering, drops, or lag", "red"
+
+            st.markdown(f"<h3 style='color:{color2}'>{emoji2} Experience Score: {test_score:.2f}</h3>", unsafe_allow_html=True)
+            st.markdown(f"<span style='color:{color2}'>{note2}</span>", unsafe_allow_html=True)
+
+        except Exception as e:
+            st.error(f"⚠️ Could not predict using fallback: {e}")
+
 
         with st.expander("ℹ️ What Do These Features Mean?"):
             st.markdown("""
@@ -225,65 +262,6 @@ elif tabs == "Experience Predictor":
             - **Experience Score** → A number from 0 to 1 showing how smooth your WiFi is.
             - **Predicted Outage** → Model says 1 = outage likely, 0 = you're safe.
             """)
-
-elif tabs == "Connection Tester":
-    with st.container():
-        st.header("📶 WiFi Experience Check")
-        st.markdown("Run a quick test to estimate your WiFi quality based on latency, signal strength, jitter, and packet loss.")
-        st.info("This tool simulates how smooth your connection feels — great for live demos, self-diagnostics, or just nerdy curiosity 👨‍💻")
-
-        run_test = st.button("🚀 Run WiFi Test")
-
-        latency_ms = None
-        if run_test:
-            from streamlit_javascript import st_javascript
-            latency_script = """
-            const start = performance.now();
-            fetch("https://api.github.com", { mode: "cors" })
-              .then(() => {
-                const latency = performance.now() - start;
-                Streamlit.setComponentValue(latency);
-              })
-              .catch(() => {
-                Streamlit.setComponentValue(-1);
-              });
-            """
-            latency_ms = st_javascript(latency_script, key="latency_test_final")
-
-        # Signal values (can later let user adjust these too)
-        rssi = -55
-        jitter = 15
-        packet_loss = 0.01
-        model = experience_model
-
-        # Handle no JS or failed ping
-        if not latency_ms or latency_ms <= 0:
-            st.warning("⚠️ Could not measure latency automatically. Let’s estimate it manually instead.")
-            latency_ms = st.slider("🎛️ Estimate your latency (ms)", 20, 400, 120)
-
-        st.markdown("### 📋 Signal Snapshot for Prediction")
-        st.markdown(f"""
-        - **Latency:** `{round(latency_ms)} ms`  
-        - **RSSI:** `{rssi} dBm`  
-        - **Jitter:** `{jitter} ms`  
-        - **Packet Loss:** `{packet_loss * 100:.1f}%`
-        """)
-
-        input_df = pd.DataFrame([[rssi, latency_ms, jitter, packet_loss]],
-                                columns=["rssi", "latency_ms", "jitter_ms", "packet_loss"])
-        score = model.predict(input_df)[0]
-
-        if score >= 0.85:
-            emoji, note, color = "🌟", "Flawless connection. You could livestream a rocket launch 🚀", "green"
-        elif score >= 0.6:
-            emoji, note, color = "😐", "Decent connection — good for browsing or video calls", "orange"
-        else:
-            emoji, note, color = "🚨", "Slow or unstable. Expect buffering or lag", "red"
-
-        st.markdown(f"<h3 style='color:{color}'>{emoji} Experience Score: {score:.2f}</h3>", unsafe_allow_html=True)
-        st.markdown(f"<span style='color:{color}'>{note}</span>", unsafe_allow_html=True)
-
-
 
 elif tabs == "Outage Detector":
     with st.container():
