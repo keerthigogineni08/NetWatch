@@ -87,14 +87,14 @@ def render_shap_explainer(model, data_sample):
 import gdown
 
 @st.cache_resource
-def load_experience_model_from_drive():
-    url = "https://drive.google.com/uc?id=1v8rzLByAJpChO2fN1HxFOOBDS16NcH6y"
+def load_experience_model():
+    url = "https://drive.google.com/uc?id=1PfnjFs9pdMRoShh9VP5YOgAwlzPOnnLL"
     output = "models/experience_score_model.pkl"
     if not os.path.exists(output):
         gdown.download(url, output, quiet=False)
     return joblib.load(output)
 
-experience_model = load_experience_model_from_drive()
+experience_model = load_experience_model()
 
 
 # ==========================
